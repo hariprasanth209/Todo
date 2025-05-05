@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Task Checklist with Alarms</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4bb543;
+            --warning-color: #ffc107;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+            background-color: rgba(75, 181, 67, 0.1) !important;
+        }
+        
+        .task-item {
+            transition: all 0.3s ease;
+            border-radius: 8px !important;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .task-item.alert-active {
+            border-left: 4px solid var(--warning-color);
+            background-color: rgba(255, 193, 7, 0.1);
+            animation: pulseWarning 1.5s infinite;
+        }
+        
+        .task-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .date-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 15px 20px;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .task-checkbox:checked {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .progress-container {
+            height: 6px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+            transition: width 0.5s ease;
+        }
+        
+        .reset-btn {
+            background-color: white;
+            color: var(--primary-color);
+            border: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            background-color: var(--light-color);
+            transform: scale(1.05);
+        }
+        
+        .task-time {
+            font-weight: 600;
+            color: var(--primary-color);
+            min-width: 80px;
+            display: inline-block;
+        }
+        
+        .alarm-btn {
+            background-color: var(--warning-color);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .alarm-btn.active {
+            background-color: var(--success-color);
+        }
+        
+        .alarm-btn i {
+            font-size: 14px;
+            color: white;
+        }
+        
+        @keyframes pulseWarning {
+            0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+        
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+            
+            .task-text {
+                font-size: 14px;
+            }
+            
+            .task-time {
+                min-width: 70px;
+                font-size: 13px;
+            }
+            
+            .date-header h3 {
+                font-size: 1.3rem;
+            }
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+            z-index: 1000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+        <h1 class="text-center mb-3 animate__animated animate__fadeInDown">
+            <i class="fas fa-tasks me-2"></i>Daily Task Checklist
+        </h1>
+        
+        <div class="date-header text-center mb-4 animate__animated animate__fadeIn">
+            <h3 id="current-date" class="mb-2"></h3>
+            <button id="reset-tasks" class="btn reset-btn animate__animated animate__pulse">
+                <i class="fas fa-sync-alt me-2"></i>Reset Today's Tasks
+            </button>
+        </div>
+        
+        <div class="progress-container animate__animated animate__fadeIn">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="far fa-calendar-check me-2"></i>Today's Tasks
+                            <span id="completed-count" class="badge bg-light text-dark float-end">0/17</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush" id="task-list">
+                            <!-- Tasks will be added here by JavaScript -->
+                        </ul>
+                    </div>
+                    <div class="card-footer text-muted text-center">
+                        <small><i class="far fa-clock me-1"></i>Tasks will automatically reset at midnight</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fab animate__animated animate__bounceIn" id="scroll-top" title="Scroll to top">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <audio id="alarm-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Task data with alarm times (converted to 24-hour format)
+            const tasks = [
+                { time: '5 - 6', description: 'refreshment and exercise', startTime: 5, endTime: 6 },
+                { time: '6 - 6.30', description: 'relax and meditate', startTime: 6, endTime: 6.5 },
+                { time: '6.30 - 9', description: 'study java', startTime: 6.5, endTime: 9 },
+                { time: '9 - 9.30', description: 'breakfast', startTime: 9, endTime: 9.5 },
+                { time: '9.30 - 10.30', description: 'trading', startTime: 9.5, endTime: 10.5 },
+                { time: '10.30 - 11', description: 'break', startTime: 10.5, endTime: 11 },
+                { time: '11 - 1', description: 'youtube content for communication', startTime: 11, endTime: 13 },
+                { time: '1 - 1.30', description: 'lunch', startTime: 13, endTime: 13.5 },
+                { time: '1.30 - 2.30', description: 'editing the content', startTime: 13.5, endTime: 14.5 },
+                { time: '2.30 - 3', description: 'upload in different platform', startTime: 14.5, endTime: 15 },
+                { time: '3 - 3.30', description: 'break', startTime: 15, endTime: 15.5 },
+                { time: '3.30 - 4.30', description: 'study trading', startTime: 15.5, endTime: 16.5 },
+                { time: '4.30 - 6', description: 'app building / coding', startTime: 16.5, endTime: 18 },
+                { time: '6 - 7', description: 'break', startTime: 18, endTime: 19 },
+                { time: '7 - 7.30', description: 'medium muscle movement', startTime: 19, endTime: 19.5 },
+                { time: '7.30 - 9', description: 'study java / trade', startTime: 19.5, endTime: 21 },
+                { time: '9 - 9.30', description: 'dinner', startTime: 21, endTime: 21.5 }
+            ];
+
+            // Alarm variables
+            let alarmTimeouts = [];
+            let activeAlarms = {};
+            const alarmSound = document.getElementById('alarm-sound');
+
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.error('Service Worker registration failed', err));
+            }
+
+            // Request notification permission
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission !== 'granted') {
+                        console.log('Notification permission denied');
+                    }
+                });
+            }
+
+            // Get current date in YYYY-MM-DD format
+            function getCurrentDate() {
+                const today = new Date();
+                return today.toISOString().split('T')[0];
+            }
+
+            // Get current time in hours (decimal)
+            function getCurrentHour() {
+                const now = new Date();
+                return now.getHours() + (now.getMinutes() / 60);
+            }
+
+            // Display current date
+            function displayCurrentDate() {
+                const today = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', options);
+            }
+
+            // Update progress bar and completed count
+            function updateProgress() {
+                const checkboxes = document.querySelectorAll('.task-checkbox:checked');
+                const completedCount = checkboxes.length;
+                const totalTasks = tasks.length;
+                const progressPercent = (completedCount / totalTasks) * 100;
+                
+                document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+                document.getElementById('completed-count').textContent = `${completedCount}/${totalTasks}`;
+                
+                if (completedCount > 0 && completedCount < totalTasks) {
+                    document.getElementById('completed-count').classList.add('animate__animated', 'animate__pulse');
+                    setTimeout(() => {
+                        document.getElementById('completed-count').classList.remove('animate__animated', 'animate__pulse');
+                    }, 1000);
+                }
+            }
+
+            // Trigger alarm notification
+            function triggerAlarm(taskIndex) {
+                const task = tasks[taskIndex];
+                const taskElement = document.querySelector(`#task-${taskIndex}`)?.closest('.task-item');
+                
+                if (taskElement) {
+                    taskElement.classList.add('alert-active');
+                    alarmSound.currentTime = 0;
+                    alarmSound.play().catch(e => console.log('Audio playback failed:', e));
+                }
+                
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(`Time for: ${task.description}`, {
+                        body: `It's ${task.time} - ${task.description}`,
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png',
+                        tag: `task-${taskIndex}`
+                    });
+                }
+                
+                activeAlarms[taskIndex] = true;
+                
+                setTimeout(() => {
+                    dismissAlarm(taskIndex);
+                }, 60000);
+            }
+            
+            // Dismiss alarm
+            function dismissAlarm(taskIndex) {
+                const taskElement = document.querySelector(`#task-${taskIndex}`)?.closest('.task-item');
+                if (taskElement) {
+                    taskElement.classList.remove('alert-active');
+                }
+                delete activeAlarms[taskIndex];
+            }
+
+            // Schedule notifications via Service Worker
+            async function scheduleNotifications() {
+                if (!('serviceWorker' in navigator)) return;
+                
+                const now = new Date();
+                const currentHour = getCurrentHour();
+                
+                for (let index = 0; index < tasks.length; index++) {
+                    const task = tasks[index];
+                    if (task.startTime > currentHour) {
+                        const msUntilAlarm = (task.startTime - currentHour) * 60 * 60 * 1000;
+                        const alarmTime = new Date(now.getTime() + msUntilAlarm);
+                        
+                        try {
+                            const registration = await navigator.serviceWorker.ready;
+                            await registration.showNotification(`Time for: ${task.description}`, {
+                                body: `It's ${task.time} - ${task.description}`,
+                                icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png',
+                                tag: `task-${index}`,
+                                timestamp: alarmTime.getTime(),
+                                requireInteraction: true
+                            });
+                        } catch (e) {
+                            console.error('Failed to schedule notification:', e);
+                        }
+                    }
+                }
+            }
+
+            // Set up alarms for all tasks
+            function setupAlarms() {
+                alarmTimeouts.forEach(timeout => clearTimeout(timeout));
+                alarmTimeouts = [];
+                
+                const now = new Date();
+                const currentHour = getCurrentHour();
+                
+                tasks.forEach((task, index) => {
+                    if (task.startTime > currentHour) {
+                        const msUntilAlarm = (task.startTime - currentHour) * 60 * 60 * 1000;
+                        
+                        const timeoutId = setTimeout(() => {
+                            triggerAlarm(index);
+                        }, msUntilAlarm);
+                        
+                        alarmTimeouts.push(timeoutId);
+                    } else if (task.startTime <= currentHour && currentHour < task.endTime && !activeAlarms[index]) {
+                        triggerAlarm(index);
+                    }
+                });
+                
+                scheduleNotifications();
+            }
+
+            // Initialize the task list
+            function initializeTaskList() {
+                const currentDate = getCurrentDate();
+                const taskListElement = document.getElementById('task-list');
+                taskListElement.innerHTML = '';
+
+                const savedData = localStorage.getItem('dailyTasks');
+                let savedTasks = null;
+                
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    if (parsedData.date === currentDate) {
+                        savedTasks = parsedData.tasks;
+                    }
+                }
+
+                tasks.forEach((task, index) => {
+                    const isCompleted = savedTasks ? savedTasks[index] : false;
+                    
+                    const li = document.createElement('li');
+                    li.className = `list-group-item task-item d-flex align-items-center fade-in`;
+                    li.style.animationDelay = `${index * 0.05}s`;
+                    
+                    if (isCompleted) {
+                        li.classList.add('task-completed');
+                    }
+                    if (activeAlarms[index]) {
+                        li.classList.add('alert-active');
+                    }
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'form-check-input me-3 task-checkbox flex-shrink-0';
+                    checkbox.checked = isCompleted;
+                    checkbox.dataset.index = index;
+                    checkbox.id = `task-${index}`;
+
+                    const taskText = document.createElement('label');
+                    taskText.className = 'flex-grow-1 task-text';
+                    taskText.setAttribute('for', `task-${index}`);
+                    taskText.innerHTML = `
+                        <span class="task-time">${task.time}</span>
+                        ${task.description}
+                    `;
+
+                    const alarmBtn = document.createElement('div');
+                    alarmBtn.className = 'alarm-btn';
+                    if (activeAlarms[index]) {
+                        alarmBtn.classList.add('active');
+                    }
+                    alarmBtn.innerHTML = '<i class="fas fa-bell"></i>';
+                    alarmBtn.title = 'Dismiss alarm';
+                    alarmBtn.addEventListener('click', () => {
+                        dismissAlarm(index);
+                        alarmBtn.classList.remove('active');
+                    });
+
+                    li.appendChild(checkbox);
+                    li.appendChild(taskText);
+                    li.appendChild(alarmBtn);
+                    taskListElement.appendChild(li);
+
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            li.classList.add('task-completed', 'animate__animated', 'animate__bounce');
+                            setTimeout(() => {
+                                li.classList.remove('animate__animated', 'animate__bounce');
+                            }, 1000);
+                        } else {
+                            li.classList.remove('task-completed');
+                        }
+                        saveTaskState();
+                        updateProgress();
+                    });
+                });
+                
+                updateProgress();
+                setupAlarms();
+            }
+
+            // Save task state to localStorage
+            function saveTaskState() {
+                const checkboxes = document.querySelectorAll('.task-checkbox');
+                const taskStates = Array.from(checkboxes).map(checkbox => checkbox.checked);
+                
+                const dataToSave = {
+                    date: getCurrentDate(),
+                    tasks: taskStates
+                };
+
+                localStorage.setItem('dailyTasks', JSON.stringify(dataToSave));
+            }
+
+            // Reset all tasks to unchecked
+            function resetTasks() {
+                const checkboxes = document.querySelectorAll('.task-checkbox');
+                const taskItems = document.querySelectorAll('.task-item');
+                
+                const resetBtn = document.getElementById('reset-tasks');
+                resetBtn.classList.add('animate__animated', 'animate__rotateIn');
+                setTimeout(() => {
+                    resetBtn.classList.remove('animate__animated', 'animate__rotateIn');
+                }, 1000);
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                taskItems.forEach(item => {
+                    item.classList.remove('task-completed');
+                });
+                
+                saveTaskState();
+                updateProgress();
+                setupAlarms();
+            }
+
+            // Check if it's a new day and reset tasks if needed
+            function checkForNewDay() {
+                const savedData = localStorage.getItem('dailyTasks');
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    if (parsedData.date !== getCurrentDate()) {
+                        resetTasks();
+                        activeAlarms = {};
+                        setupAlarms();
+                    }
+                }
+            }
+
+            // Scroll to top function
+            document.getElementById('scroll-top').addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // Show/hide scroll to top button
+            window.addEventListener('scroll', function() {
+                const scrollTopBtn = document.getElementById('scroll-top');
+                if (window.pageYOffset > 300) {
+                    scrollTopBtn.style.display = 'flex';
+                } else {
+                    scrollTopBtn.style.display = 'none';
+                }
+            });
+
+            // Set up event listeners
+            document.getElementById('reset-tasks').addEventListener('click', resetTasks);
+
+            // Initialize the app
+            displayCurrentDate();
+            checkForNewDay();
+            initializeTaskList();
+
+            // Check for midnight to reset tasks
+            setInterval(checkForNewDay, 60000);
+            
+            // Check for active alarms on page load
+            setInterval(() => {
+                const currentHour = getCurrentHour();
+                tasks.forEach((task, index) => {
+                    if (!activeAlarms[index] && Math.abs(currentHour - task.startTime) < 0.0167) { // Within 1 minute of start
+                        triggerAlarm(index);
+                    }
+                });
+            }, 60000);
+        });
+    </script>
+</body>
+</html>
